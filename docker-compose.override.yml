@@ -1,0 +1,37 @@
+version: '3.9'
+
+x-mes monitoring:
+  &monitoring
+  labels:
+    org.opencontainers.image.description: "MesterX Monitoring"
+    prometheus.scrape: "true"
+    prometheus.path: "/metrics"
+    prometheus.port: "9113"  # tiny-tools
+
+services:
+  api:
+    <<: *monitoring
+    labels:
+      prometheus.path: "/health"
+
+  license-api:
+    <<: *monitoring
+    labels:
+      prometheus.path: "/health"
+
+  db:
+    image: prom/mysqld-exporter:v0.15.0  # postgres-exporter when available
+    container_name: mesterx_db_exporter
+    command:
+      - --collect.global_status
+      - --collect.global_variables
+      - --collect.info_schema.innodb_metrics
+    environment:
+      - DATA_SOURCE_NAME=mesterx:mesterxpass123@(db:5432)/mesterxdb
+    ports:
+      - "9187:9182"
+
+volumes:
+  prometheus_data:
+  grafana_data:
+

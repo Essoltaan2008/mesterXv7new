@@ -1,0 +1,83 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: mesterx_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mesterxdb
+      POSTGRES_USER: mesterx
+      POSTGRES_PASSWORD: mesterxpass123
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./database/license-commercial.sql:/docker-entrypoint-initdb.d/02_license.sql
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mesterx_api
+    restart: unless-stopped
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=db;Database=mesterxdb;Username=mesterx;Password=mesterxpass123"
+      Jwt__Secret: "super-secret-jwt-key-64chars-long-enough-for-prod"
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+
+  redis:
+    image: redis:7-alpine
+    container_name: mesterx_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+
+  license-api:
+    build:
+      context: ./license-api
+      dockerfile: Dockerfile
+    container_name: mesterx_license
+    restart: unless-stopped
+    environment:
+      ConnectionStrings__LicenseConnection: "Host=db;Database=mesterxdb;Username=mesterx;Password=mesterxpass123"
+      Jwt__Secret: "super-secret-jwt-key-64chars-long-enough-for-prod"
+      Redis__Connection: "redis://redis:6379"
+    ports:
+      - "5001:5000"
+    depends_on:
+      - db
+      - redis
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mesterx_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+      - license-api
+
+  nginx:
+    image: nginx:alpine
+    container_name: mesterx_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./devops/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+      - frontend
+
+volumes:
+  pgdata:
+

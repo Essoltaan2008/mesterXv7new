@@ -1,0 +1,103 @@
+MesterX Ultra v6 - A to Z Commands
+=================================
+
+A) Open project
+cd c:\projects\MesterX-Ultra-v6-FINAL-PRODUCTION
+
+B) Install frontend dependencies
+cd frontend
+npm install
+
+C) Run frontend development server
+cd c:\projects\MesterX-Ultra-v6-FINAL-PRODUCTION\frontend
+npm run dev
+
+D) Build frontend for production
+cd c:\projects\MesterX-Ultra-v6-FINAL-PRODUCTION\frontend
+npm run build
+
+E) Start PostgreSQL only with Docker Compose
+cd c:\projects\MesterX-Ultra-v6-FINAL-PRODUCTION
+docker compose --env-file .env.production up -d db
+
+F) Stop PostgreSQL container
+cd c:\projects\MesterX-Ultra-v6-FINAL-PRODUCTION
+docker compose --env-file .env.production stop db
+
+G) View PostgreSQL container status
+cd c:\projects\MesterX-Ultra-v6-FINAL-PRODUCTION
+docker compose --env-file .env.production ps
+
+H) View PostgreSQL logs
+cd c:\projects\MesterX-Ultra-v6-FINAL-PRODUCTION
+docker compose --env-file .env.production logs db
+
+I) Run backend API locally with environment variables
+cd c:\projects\MesterX-Ultra-v6-FINAL-PRODUCTION
+powershell -NoProfile -Command "$env:ASPNETCORE_ENVIRONMENT='Production'; $env:ASPNETCORE_URLS='http://localhost:5000'; $env:ConnectionStrings__DefaultConnection='Host=localhost;Port=5432;Database=mesterxdb;Username=mesterx;Password=CHANGE_THIS_STRONG_PASSWORD_123!;Include Error Detail=true'; $env:Jwt__Secret='CHANGE_THIS_TO_64_CHAR_MIN_SECRET_KEY_openssl_rand_hex_64_here'; $env:Jwt__Issuer='mesterx-api'; $env:Jwt__Audience='mesterx-client'; $env:Jwt__ExpiryMinutes='60'; $env:Jwt__RefreshTokenExpiryDays='30'; $env:AllowedOrigins__0='http://localhost:3000'; dotnet run --project backend/src/MesterX.API/MesterX.API.csproj"
+
+J) Restore backend packages
+cd c:\projects\MesterX-Ultra-v6-FINAL-PRODUCTION
+dotnet restore backend/src/MesterX.API/MesterX.API.csproj
+
+K) Build backend API
+cd c:\projects\MesterX-Ultra-v6-FINAL-PRODUCTION
+dotnet build backend/src/MesterX.API/MesterX.API.csproj
+
+L) Run full frontend app in browser
+http://localhost:3000/login
+
+M) API base URL used by frontend
+http://localhost:5000/api
+
+N) Platform owner email
+mahmoudtohamy44@gmail.com
+
+O) Platform owner password
+Admin@MesterX2025!
+
+P) Additional demo / owner emails
+demo@mesterx.com
+owner@demo.mesterx.com
+owner@nilecafe.eg
+owner@farha.eg
+
+Q) Open Swagger if backend works
+http://localhost:5000/swagger
+
+R) Clean frontend build cache
+cd c:\projects\MesterX-Ultra-v6-FINAL-PRODUCTION\frontend
+rmdir /s /q .next
+
+S) Re-run frontend after cleaning cache
+cd c:\projects\MesterX-Ultra-v6-FINAL-PRODUCTION\frontend
+npm run dev
+
+T) Stop all Docker Compose services
+cd c:\projects\MesterX-Ultra-v6-FINAL-PRODUCTION
+docker compose --env-file .env.production down
+
+U) Remove Docker volumes too
+cd c:\projects\MesterX-Ultra-v6-FINAL-PRODUCTION
+docker compose --env-file .env.production down -v
+
+V) Check Node version
+node -v
+
+W) Check npm version
+npm -v
+
+X) Check .NET version
+dotnet --version
+
+Y) Check Docker version
+docker --version
+
+Z) Current important notes
+- Frontend build is fixed and working.
+- Frontend login page works on localhost.
+- Platform owner account:
+  Email: mahmoudtohamy44@gmail.com
+  Password: Admin@MesterX2025!
+- Backend still has structural compile issues outside the frontend fixes.
+- If backend is unavailable, demo login fallback is enabled in frontend.
