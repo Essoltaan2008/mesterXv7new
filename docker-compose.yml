@@ -15,20 +15,12 @@ services:
       - ./database/license-commercial.sql:/docker-entrypoint-initdb.d/02_license.sql
     ports:
       - "5432:5432"
-
-  api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: mesterx_api
-    restart: unless-stopped
-    environment:
-      ConnectionStrings__DefaultConnection: "Host=db;Database=mesterxdb;Username=mesterx;Password=mesterxpass123"
-      Jwt__Secret: "super-secret-jwt-key-64chars-long-enough-for-prod"
-    ports:
-      - "5000:5000"
-    depends_on:
-      - db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mesterx -d mesterxdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   redis:
     image: redis:7-alpine
@@ -37,6 +29,43 @@ services:
     ports:
       - "6379:6379"
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mesterx_api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: "postgresql://mesterx:mesterxpass123@db:5432/mesterxdb"
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: mesterx
+      DB_PASSWORD: mesterxpass123
+      DB_NAME: mesterxdb
+      JWT_SECRET: "super-secret-jwt-key-64chars-long-enough-for-production-use"
+      REDIS_URL: "redis://redis:6379"
+      ALLOWED_ORIGINS: "http://localhost:3000,http://mesterx_frontend:3000"
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   license-api:
     build:
@@ -45,14 +74,30 @@ services:
     container_name: mesterx_license
     restart: unless-stopped
     environment:
-      ConnectionStrings__LicenseConnection: "Host=db;Database=mesterxdb;Username=mesterx;Password=mesterxpass123"
-      Jwt__Secret: "super-secret-jwt-key-64chars-long-enough-for-prod"
-      Redis__Connection: "redis://redis:6379"
+      NODE_ENV: production
+      PORT: 5001
+      DATABASE_URL: "postgresql://mesterx:mesterxpass123@db:5432/mesterxdb"
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: mesterx
+      DB_PASSWORD: mesterxpass123
+      DB_NAME: mesterxdb
+      JWT_SECRET: "super-secret-jwt-key-64chars-long-enough-for-production-use"
+      REDIS_URL: "redis://redis:6379"
+      ALLOWED_ORIGINS: "http://localhost:3000,http://mesterx_frontend:3000"
     ports:
-      - "5001:5000"
+      - "5001:5001"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5001/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   frontend:
     build:
@@ -60,11 +105,13 @@ services:
       dockerfile: Dockerfile
     container_name: mesterx_frontend
     restart: unless-stopped
+    environment:
+      VITE_API_URL: "http://localhost:5000"
     ports:
       - "3000:3000"
     depends_on:
-      - api
-      - license-api
+      api:
+        condition: service_healthy
 
   nginx:
     image: nginx:alpine
